@@ -39,17 +39,29 @@ def splitCheckinIntoRouteByDay(checkin_d, days):
         return {}
 
     RouteDic = {}
-    firstDay = float(checkin_d[0]['r.atTime'])
+    previous = float(checkin_d[0]['r.atTime'])
+    key = 0
     for checkin in checkin_d:
-        timestamp = float(checkin['r.atTime']) - firstDay
-        day = int(timestamp / (86400 * days))
-        if day in RouteDic:
-            RouteDic[day].append(
-                {'pid': checkin['p.id'].encode(), 'time': str(checkin['r.atTime'])})
+        interval = float(checkin['r.atTime']) - previous
+        if interval <= (86400 * days):
+            if key in RouteDic:
+                RouteDic[key].append(
+                    {'pid': checkin['p.id'].encode(), 'time': str(checkin['r.atTime'])})
+            else:
+                RouteDic[key] = []
+                RouteDic[key].append(
+                    {'pid': checkin['p.id'].encode(), 'time': str(checkin['r.atTime'])})
         else:
-            RouteDic[day] = []
-            RouteDic[day].append(
-                {'pid': checkin['p.id'].encode(), 'time': str(checkin['r.atTime'])})
+            key += 1
+            if key in RouteDic:
+                RouteDic[key].append(
+                    {'pid': checkin['p.id'].encode(), 'time': str(checkin['r.atTime'])})
+            else:
+                RouteDic[key] = []
+                RouteDic[key].append(
+                    {'pid': checkin['p.id'].encode(), 'time': str(checkin['r.atTime'])})
+
+        previous = float(checkin['r.atTime'])
 
     return RouteDic
 
@@ -70,7 +82,7 @@ def mainExtract(inPut):
         datasetLabel = ('CAUser', 'CAPlace')
 
     allUsers = getAllUser(datasetLabel[0])
-    checkPath = ('/home/moonorblue/routes/' + datasetName +
+    checkPath = ('/home/moonorblue/routesV2/' + datasetName +
                  '/' + str(splitDay) + '/')
     checkSet = Set(listdir(checkPath))
 
@@ -84,16 +96,16 @@ def mainExtract(inPut):
             checkins, int(splitDay))  # split by splitDay
         jsonF = {'uid': User['n.id'].encode(), 'route': routes}
 
-        f = open('/home/moonorblue/routes/' + datasetName +
+        f = open('/home/moonorblue/routesV2/' + datasetName +
                  '/' + str(splitDay) + '/' + User['n.id'].encode() + '.json', 'w')
         f.write(json.dumps(jsonF))
         f.close()
 
 
 if __name__ == '__main__':
-    # dsName = ['FB','CA','GWL','FS']
-    dsName = ['FS']
-    splitDays = [1, 7]
+    dsName = ['FB', 'CA', 'GWL', 'FS']
+    # dsName = ['FS']
+    splitDays = [1]
     for n in dsName:
         for d in splitDays:
             i = (n, d)
